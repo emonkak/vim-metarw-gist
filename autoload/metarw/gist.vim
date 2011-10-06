@@ -243,10 +243,10 @@ endfunction
 function! s:write_new(_, content)  "{{{2
   let api = 'http://gist.github.com/api/v1/json/new'
   let result = http#post(api, {
-  \   printf('files[%s]', expand('%')): a:content,
-  \   'login': g:metarw_gist_user,
-  \   'token': g:metarw_gist_token,
-  \   'description': expand('%')
+  \    printf('files[%s]', expand('%')): a:content,
+  \    'login': g:metarw_gist_user,
+  \    'token': g:metarw_gist_token,
+  \    'description': expand('%')
   \ }, {'Expect': ''})
   if result.header[0] != 'HTTP/1.1 200 OK'
     return ['error', 'Request failed: ' . result.header[0]]
@@ -266,12 +266,12 @@ function! s:write_update(_, content)  "{{{2
 
   " BUGS: Not obvious whether the request was successful.
   call http#post('https://gist.github.com/gists/' . a:_.gist_id, {
-  \   '_method': 'put',
-  \   printf('file_ext[%s]', a:_.gist_filename): file_ext,
-  \   printf('file_name[%s]', a:_.gist_filename): a:_.gist_filename,
-  \   printf('file_contents[%s]', a:_.gist_filename): a:content,
-  \   'login': g:metarw_gist_user,
-  \   'token': g:metarw_gist_token,
+  \    '_method': 'put',
+  \    printf('file_ext[%s]', a:_.gist_filename): file_ext,
+  \    printf('file_name[%s]', a:_.gist_filename): a:_.gist_filename,
+  \    printf('file_contents[%s]', a:_.gist_filename): a:content,
+  \    'login': g:metarw_gist_user,
+  \    'token': g:metarw_gist_token,
   \ }, {'Expect': ''})
 
   return ['done', '']
