@@ -26,7 +26,7 @@ function! metarw#gist#complete(arglead, cmdline, cursorpos)  "{{{2
   let _ = s:parse_incomplete_fakepath(a:arglead)
 
   let candidates = []
-  if _.id_given_p
+  if _.filename_given_p || (_.id_given_p && _.given_fakepath[-1] == '/')
     for filename in s:gist_metadata(_).gists[0].files
       call add(candidates,
       \        printf('%s:%s/%s/%s',
@@ -106,6 +106,7 @@ function! s:parse_incomplete_fakepath(incomplete_fakepath)  "{{{2
   endif
   let fragments = insert(split(fragments[1], '/'), fragments[0], 0)
 
+  let _.given_fakepath = a:incomplete_fakepath
   let _.scheme = fragments[0]
 
   " {gist_user}
