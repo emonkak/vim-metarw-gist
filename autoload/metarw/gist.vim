@@ -30,10 +30,10 @@ function! metarw#gist#complete(arglead, cmdline, cursorpos)  "{{{2
     for filename in s:gist_metadata(_).gists[0].files
       call add(candidates,
       \        printf('%s:%s/%s/%s',
-      \                _.scheme,
-      \                _.gist_user,
-      \                _.gist_id,
-      \                filename))
+      \               _.scheme,
+      \               _.gist_user,
+      \               _.gist_id,
+      \               filename))
     endfor
     let head_part = printf('%s:%s/%s/', _.scheme, _.gist_user, _.gist_id)
     let tail_part = _.gist_filename
@@ -42,10 +42,10 @@ function! metarw#gist#complete(arglead, cmdline, cursorpos)  "{{{2
       for filename in gist.files
         call add(candidates,
         \        printf('%s:%s/%s/%s',
-        \                _.scheme,
-        \                _.gist_user,
-        \                gist.repo,
-        \                filename))
+        \               _.scheme,
+        \               _.gist_user,
+        \               gist.repo,
+        \               filename))
       endfor
     endfor
     let head_part = printf('%s:%s/', _.scheme, _.gist_user)
@@ -62,12 +62,14 @@ function! metarw#gist#read(fakepath)  "{{{2
   let _ = s:parse_incomplete_fakepath(a:fakepath)
 
   if _.filename_given_p
-    return s:read_content(_)
+    let result = s:read_content(_)
   elseif _.id_given_p
-    return s:read_metadata(_)
+    let result = s:read_metadata(_)
   else
-    return s:read_list(_)
+    let result = s:read_list(_)
   endif
+
+  return result
 endfunction
 
 
@@ -76,22 +78,18 @@ endfunction
 function! metarw#gist#write(fakepath, line1, line2, append_p)  "{{{2
   let _ = s:parse_incomplete_fakepath(a:fakepath)
 
-  if g:metarw_gist_user != _.gist_user || !_.filename_given_p
-    return ['error', 'Not supported']
+  let content = join(getline(a:line1, a:line2), "\n")
+  if !_.user_given_p
+    let result = s:write_new(_, content)
+  elseif g:metarw_gist_user != _.gist_user
+    let result = ['error', 'Writing to other user gist not supported']
+  elseif !_.filename_given_p
+    let result = ['error', 'Filename is not given']
+  else
+    let result = s:write_update(_, content)
   endif
 
-  let file_ext = fnamemodify(_.gist_filename, ':e')
-  let content = join(getline(a:line1, a:line2), "\n")
-  " BUGS: Not obvious whether the request was successful.
-  call http#post('https://gist.github.com/gists/' . _.gist_id, {
-  \   '_method': 'put',
-  \   printf('file_ext[%s]', _.gist_filename): file_ext,
-  \   printf('file_name[%s]', _.gist_filename): _.gist_filename,
-  \   printf('file_contents[%s]', _.gist_filename): content,
-  \   'login': g:metarw_gist_user,
-  \   'token': g:metarw_gist_token,
-  \ }, {'Expect': ''})
-  return ['done', '']
+  return result
 endfunction
 
 
@@ -113,9 +111,11 @@ function! s:parse_incomplete_fakepath(incomplete_fakepath)  "{{{2
   " {gist_user}
   let i = 1
   if i < len(fragments)
+    let _.user_given_p = !0
     let _.gist_user = fragments[i]
     let i += 1
   else
+    let _.user_given_p = !!0
     let _.gist_user = g:metarw_gist_user
   endif
 
@@ -152,6 +152,7 @@ function! s:gist_metadata(_)  "{{{2
     echoerr 'Request failed: ' result.header[0]
     return {}
   endif
+
   return json#decode(result.content)
 endfunction
 
@@ -165,6 +166,7 @@ function! s:gist_list(_)  "{{{2
     echoerr 'Request failed: ' result.header[0]
     return {}
   endif
+
   return json#decode(result.content)
 endfunction
 
@@ -180,6 +182,7 @@ function! s:read_content(_)  "{{{2
     return ['error', 'Request failed: ' result.header[0]]
   endif
   put =result.content
+
   return ['done', '']
 endfunction
 
@@ -203,6 +206,7 @@ function! s:read_metadata(_)  "{{{2
     \                       filename)
     \ })
   endfor
+
   return ['browse', result]
 endfunction
 
@@ -214,7 +218,7 @@ function! s:read_list(_)  "{{{2
   for gist in s:gist_list(a:_).gists
     for filename in gist.files
       call add(result, {
-      \    'label': gist.repo . '/' . filename,
+      \    'label': gist.repo . ': ' . filename,
       \    'fakepath': printf('%s:%s/%s/%s',
       \                       a:_.scheme,
       \                       a:_.gist_user,
@@ -223,7 +227,48 @@ function! s:read_list(_)  "{{{2
       \ })
     endfor
   endfor
+
   return ['browse', result]
+endfunction
+
+
+
+
+function! s:write_new(_, content)  "{{{2
+  let api = 'http://gist.github.com/api/v1/json/new'
+  let result = http#post(api, {
+  \   printf('files[%s]', expand('%')): a:content,
+  \   'login': g:metarw_gist_user,
+  \   'token': g:metarw_gist_token,
+  \   'description': expand('%')
+  \ }, {'Expect': ''})
+  if result.header[0] != 'HTTP/1.1 200 OK'
+    return ['error', 'Request failed: ' . result.header[0]]
+  endif
+
+  let gist = json#decode(result.content).gists[0]
+  echo 'https://gist.github.com/' . gist.repo
+
+  return ['done', '']
+endfunction
+
+
+
+
+function! s:write_update(_, content)  "{{{2
+  let file_ext = fnamemodify(a:_.gist_filename, ':e')
+
+  " BUGS: Not obvious whether the request was successful.
+  call http#post('https://gist.github.com/gists/' . a:_.gist_id, {
+  \   '_method': 'put',
+  \   printf('file_ext[%s]', a:_.gist_filename): file_ext,
+  \   printf('file_name[%s]', a:_.gist_filename): a:_.gist_filename,
+  \   printf('file_contents[%s]', a:_.gist_filename): a:content,
+  \   'login': g:metarw_gist_user,
+  \   'token': g:metarw_gist_token,
+  \ }, {'Expect': ''})
+
+  return ['done', '']
 endfunction
 
 

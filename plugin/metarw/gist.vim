@@ -46,29 +46,6 @@ endif
 
 
 
-command! -bang -range=% -nargs=0 Gist  <line1>,<line2>call s:gist_post()
-function! s:gist_post() range
-  let api = 'http://gist.github.com/api/v1/json/new'
-  let filename = expand('%') != '' ? expand('%') : input('Filename: ')
-  let content = join(getline(a:firstline, a:lastline), "\n")
-  let result = http#post(api, {
-  \   printf('files[%s]', expand('%')): content,
-  \   'login': g:metarw_gist_user,
-  \   'token': g:metarw_gist_token,
-  \   'description': input('Description: ', filename)
-  \ }, {'Expect': ''})
-  redraw
-  if result.header[0] != 'HTTP/1.1 200 OK'
-    echoerr 'Request failed: ' result.header[0]
-    return
-  endif
-  let gist = json#decode(result.content).gists[0]
-  echo 'https://gist.github.com/' . gist.repo
-endfunction
-
-
-
-
 let g:loaded_gist = 1
 
 " __END__
