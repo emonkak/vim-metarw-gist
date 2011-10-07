@@ -21,6 +21,25 @@
 "     TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 "     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 " }}}
+" Variables  "{{{1
+
+if !exists('g:metarw_gist_user')
+  let g:metarw_gist_user = system('git config --global github.user')[:-2]
+  if g:metarw_gist_user == ''
+    let g:metarw_gist_user = $GITHUB_USER
+  end
+endif
+
+if !exists('g:metarw_gist_token')
+  let g:metarw_gist_token = system('git config --global github.token')[:-2]
+  if g:metarw_gist_token == ''
+    let g:metarw_gist_token = $GITHUB_TOKEN
+  end
+endif
+
+
+
+
 " Interface  "{{{1
 function! metarw#gist#complete(arglead, cmdline, cursorpos)  "{{{2
   let _ = s:parse_incomplete_fakepath(a:arglead)
