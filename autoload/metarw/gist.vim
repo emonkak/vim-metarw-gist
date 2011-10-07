@@ -104,7 +104,7 @@ function! s:parse_incomplete_fakepath(incomplete_fakepath)  "{{{2
     echoerr 'Unexpected a:incomplete_fakepath:' string(a:incomplete_fakepath)
     throw 'metarw:gist#e1'
   endif
-  let fragments = insert(split(fragments[1], '/'), fragments[0], 0)
+  let fragments = insert(split(fragments[1], '[\/]'), fragments[0], 0)
 
   let _.given_fakepath = a:incomplete_fakepath
   let _.scheme = fragments[0]
@@ -160,7 +160,7 @@ endfunction
 
 
 function! s:gist_list(_)  "{{{2
-  let api = 'http://gist.github.com/api/v1/json/gists/' . a:_.gist_user
+  let api = 'https://gist.github.com/api/v1/json/gists/' . a:_.gist_user
   let result = http#get(api)
   if result.header[0] != 'HTTP/1.1 200 OK'
     throw 'Request failed: ' . result.header[0]
