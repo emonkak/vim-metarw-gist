@@ -124,7 +124,7 @@ function! s:parse_incomplete_fakepath(incomplete_fakepath)  "{{{2
     echoerr 'Unexpected a:incomplete_fakepath:' string(a:incomplete_fakepath)
     throw 'metarw:gist#e1'
   endif
-  let fragments = insert(split(fragments[1], '/'), fragments[0], 0)
+  let fragments = [fragments[0]] + split(fragments[1], '[\/]')
 
   let _.given_fakepath = a:incomplete_fakepath
   let _.scheme = fragments[0]
