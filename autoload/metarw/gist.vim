@@ -180,7 +180,7 @@ endfunction
 
 
 function! s:gist_list(_)  "{{{2
-  let api = 'http://gist.github.com/api/v1/json/gists/' . a:_.gist_user
+  let api = 'https://gist.github.com/api/v1/json/gists/' . a:_.gist_user
   let result = http#get(api)
   if result.header[0] != 'HTTP/1.1 200 OK'
     throw 'Request failed: ' . result.header[0]
@@ -262,7 +262,7 @@ endfunction
 
 
 function! s:write_new(_, content)  "{{{2
-  let api = 'http://gist.github.com/api/v1/json/new'
+  let api = 'https://gist.github.com/api/v1/json/new'
   let result = http#post(api, {
   \    printf('files[%s]', expand('%')): a:content,
   \    'login': g:metarw_gist_user,
