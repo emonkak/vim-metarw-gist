@@ -45,7 +45,8 @@ function! metarw#gist#complete(arglead, cmdline, cursorpos)  "{{{2
   let _ = s:parse_incomplete_fakepath(a:arglead)
 
   let candidates = []
-  if _.filename_given_p || (_.id_given_p && _.given_fakepath[-1] == '/')
+  if _.gist_filename_given_p
+  \  || (_.gist_id_given_p && _.given_fakepath[-1] == '/')
     for filename in s:gist_metadata(_).gists[0].files
       call add(candidates,
       \        printf('%s:%s/%s/%s',
@@ -80,9 +81,9 @@ endfunction
 function! metarw#gist#read(fakepath)  "{{{2
   let _ = s:parse_incomplete_fakepath(a:fakepath)
 
-  if _.filename_given_p
+  if _.gist_filename_given_p
     let result = s:read_content(_)
-  elseif _.id_given_p
+  elseif _.gist_id_given_p
     let result = s:read_metadata(_)
   else
     let result = s:read_list(_)
@@ -98,11 +99,11 @@ function! metarw#gist#write(fakepath, line1, line2, append_p)  "{{{2
   let _ = s:parse_incomplete_fakepath(a:fakepath)
 
   let content = join(getline(a:line1, a:line2), "\n")
-  if !_.user_given_p
+  if !_.gist_user_given_p
     let result = s:write_new(_, content)
   elseif g:metarw_gist_user != _.gist_user
     let result = ['error', 'Writing to other user gist not supported']
-  elseif !_.filename_given_p
+  elseif !_.gist_filename_given_p
     let result = ['error', 'Filename is not given']
   else
     let result = s:write_update(_, content)
@@ -131,31 +132,31 @@ function! s:parse_incomplete_fakepath(incomplete_fakepath)  "{{{2
   " {gist_user}
   let i = 1
   if i < len(fragments)
-    let _.user_given_p = !0
+    let _.gist_user_given_p = !0
     let _.gist_user = fragments[i]
     let i += 1
   else
-    let _.user_given_p = !!0
+    let _.gist_user_given_p = !!0
     let _.gist_user = g:metarw_gist_user
   endif
 
   " {gist_id}
   if i < len(fragments)
-    let _.id_given_p = !0
+    let _.gist_id_given_p = !0
     let _.gist_id = fragments[i]
     let i += 1
   else
-    let _.id_given_p = !!0
+    let _.gist_id_given_p = !!0
     let _.gist_id = ''
   endif
 
   " {gist_filename}
   if i < len(fragments)
-    let _.filename_given_p = !0
+    let _.gist_filename_given_p = !0
     let _.gist_filename = fragments[i]
     let i += 1
   else
-    let _.filename_given_p = !!0
+    let _.gist_filename_given_p = !!0
     let _.gist_filename = ''
   endif
 
