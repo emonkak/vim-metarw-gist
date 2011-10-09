@@ -173,7 +173,12 @@ function! s:gist_metadata(_)  "{{{2
     throw 'Request failed: ' . result.header[0]
   endif
 
-  return json#decode(result.content)
+  let json = json#decode(result.content)
+  if has_key(json, 'error')
+    throw json.error
+  endif
+
+  return json
 endfunction
 
 
@@ -186,7 +191,15 @@ function! s:gist_list(_)  "{{{2
     throw 'Request failed: ' . result.header[0]
   endif
 
-  return json#decode(result.content)
+  if result.content ==# 'error'
+    throw 'User not found'
+  endif
+  let json = json#decode(result.content)
+  if has_key(json, 'error')
+    throw json.error
+  endif
+
+  return json
 endfunction
 
 
@@ -216,19 +229,20 @@ function! s:read_metadata(_)  "{{{2
   \                        a:_.gist_user)
   \  }]
   try
-    for filename in s:gist_metadata(a:_).gists[0].files
-      call add(result, {
-      \    "label": filename,
-      \    "fakepath": printf("%s:%s/%s/%s",
-      \                       a:_.scheme,
-      \                       a:_.gist_user,
-      \                       a:_.gist_id,
-      \                       filename)
-      \ })
-    endfor
+    let gist_metadata = s:gist_metadata(a:_)
   catch
     return ['error', v:exception]
   endtry
+  for filename in gist_metadata.gists[0].files
+    call add(result, {
+    \    "label": filename,
+    \    "fakepath": printf("%s:%s/%s/%s",
+    \                       a:_.scheme,
+    \                       a:_.gist_user,
+    \                       a:_.gist_id,
+    \                       filename)
+    \ })
+  endfor
 
   return ['browse', result]
 endfunction
@@ -239,21 +253,22 @@ endfunction
 function! s:read_list(_)  "{{{2
   let result = []
   try
-    for gist in s:gist_list(a:_).gists
-      for filename in gist.files
-        call add(result, {
-        \    'label': gist.repo . ': ' . filename,
-        \    'fakepath': printf('%s:%s/%s/%s',
-        \                       a:_.scheme,
-        \                       a:_.gist_user,
-        \                       gist.repo,
-        \                       filename)
-        \ })
-      endfor
-    endfor
+    let gist_list = s:gist_list(a:_)
   catch
     return ['error', v:exception]
   endtry
+  for gist in gist_list.gists
+    for filename in gist.files
+      call add(result, {
+      \    'label': gist.repo . ': ' . filename,
+      \    'fakepath': printf('%s:%s/%s/%s',
+      \                       a:_.scheme,
+      \                       a:_.gist_user,
+      \                       gist.repo,
+      \                       filename)
+      \ })
+    endfor
+  endfor
 
   return ['browse', result]
 endfunction
