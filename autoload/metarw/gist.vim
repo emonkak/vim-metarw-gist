@@ -279,10 +279,10 @@ endfunction
 function! s:write_new(_, content)  "{{{2
   let api = 'https://gist.github.com/api/v1/json/new'
   let result = http#post(api, {
-  \    printf('files[%s]', expand('%')): a:content,
+  \    printf('files[%s]', http#encodeURIComponent(expand('%:t'))): a:content,
   \    'login': g:metarw_gist_user,
   \    'token': g:metarw_gist_token,
-  \    'description': expand('%')
+  \    'description': expand('%:t')
   \ }, {'Expect': ''})
   if result.header[0] != 'HTTP/1.1 200 OK'
     return ['error', 'Request failed: ' . result.header[0]]
