@@ -46,7 +46,7 @@ function! metarw#gist#complete(arglead, cmdline, cursorpos)  "{{{2
 
   let candidates = []
   if _.gist_filename_given_p
-  \  || (_.gist_id_given_p && _.given_fakepath[-1] == '/')
+  \  || (_.gist_id_given_p && _.given_fakepath[-1] ==# '/')
     for filename in s:gist_metadata(_).gists[0].files
       call add(candidates,
       \        printf('%s:%s/%s/%s',
@@ -101,7 +101,7 @@ function! metarw#gist#write(fakepath, line1, line2, append_p)  "{{{2
   let content = join(getline(a:line1, a:line2), "\n")
   if !_.gist_user_given_p
     let result = s:write_new(_, content)
-  elseif g:metarw_gist_user != _.gist_user
+  elseif g:metarw_gist_user !=# _.gist_user
     let result = ['error', 'Writing to other user gist not supported']
   elseif !_.gist_filename_given_p
     let result = ['error', 'Filename is not given']
@@ -169,7 +169,7 @@ endfunction
 function! s:gist_metadata(_)  "{{{2
   let api = 'https://gist.github.com/api/v1/json/' . a:_.gist_id
   let result = http#get(api)
-  if result.header[0] != 'HTTP/1.1 200 OK'
+  if result.header[0] !=# 'HTTP/1.1 200 OK'
     throw 'Request failed: ' . result.header[0]
   endif
 
@@ -187,7 +187,7 @@ endfunction
 function! s:gist_list(_)  "{{{2
   let api = 'https://gist.github.com/api/v1/json/gists/' . a:_.gist_user
   let result = http#get(api)
-  if result.header[0] != 'HTTP/1.1 200 OK'
+  if result.header[0] !=# 'HTTP/1.1 200 OK'
     throw 'Request failed: ' . result.header[0]
   endif
 
@@ -210,7 +210,7 @@ function! s:read_content(_)  "{{{2
   \                a:_.gist_id,
   \                a:_.gist_filename)
   let result = http#get(api)
-  if result.header[0] != 'HTTP/1.1 200 OK'
+  if result.header[0] !=# 'HTTP/1.1 200 OK'
     return ['error', 'Request failed: ' result.header[0]]
   endif
   put =result.content
@@ -284,7 +284,7 @@ function! s:write_new(_, content)  "{{{2
   \    'token': g:metarw_gist_token,
   \    'description': expand('%:t')
   \ }, {'Expect': ''})
-  if result.header[0] != 'HTTP/1.1 200 OK'
+  if result.header[0] !=# 'HTTP/1.1 200 OK'
     return ['error', 'Request failed: ' . result.header[0]]
   endif
 
