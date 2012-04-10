@@ -168,12 +168,12 @@ endfunction
 
 function! s:gist_metadata(_)  "{{{2
   let api = 'https://gist.github.com/api/v1/json/' . a:_.gist_id
-  let result = http#get(api)
+  let result = webapi#http#get(api)
   if result.header[0] !=# 'HTTP/1.1 200 OK'
     throw 'Request failed: ' . result.header[0]
   endif
 
-  let json = json#decode(result.content)
+  let json = webapi#json#decode(result.content)
   if has_key(json, 'error')
     throw json.error
   endif
@@ -186,7 +186,7 @@ endfunction
 
 function! s:gist_list(_)  "{{{2
   let api = 'https://gist.github.com/api/v1/json/gists/' . a:_.gist_user
-  let result = http#get(api)
+  let result = webapi#http#get(api)
   if result.header[0] !=# 'HTTP/1.1 200 OK'
     throw 'Request failed: ' . result.header[0]
   endif
@@ -194,7 +194,7 @@ function! s:gist_list(_)  "{{{2
   if result.content ==# 'error'
     throw 'User not found'
   endif
-  let json = json#decode(result.content)
+  let json = webapi#json#decode(result.content)
   if has_key(json, 'error')
     throw json.error
   endif
@@ -209,7 +209,7 @@ function! s:read_content(_)  "{{{2
   let api = printf('https://raw.github.com/gist/%s/%s',
   \                a:_.gist_id,
   \                a:_.gist_filename)
-  let result = http#get(api)
+  let result = webapi#http#get(api)
   if result.header[0] !=# 'HTTP/1.1 200 OK'
     return ['error', 'Request failed: ' result.header[0]]
   endif
@@ -278,8 +278,8 @@ endfunction
 
 function! s:write_new(_, content)  "{{{2
   let api = 'https://gist.github.com/api/v1/json/new'
-  let result = http#post(api, {
-  \    printf('files[%s]', http#encodeURIComponent(expand('%:t'))): a:content,
+  let result = webapi#http#post(api, {
+  \    printf('files[%s]', webapi#http#encodeURIComponent(expand('%:t'))): a:content,
   \    'login': g:metarw_gist_user,
   \    'token': g:metarw_gist_token,
   \    'description': expand('%:t')
@@ -288,7 +288,7 @@ function! s:write_new(_, content)  "{{{2
     return ['error', 'Request failed: ' . result.header[0]]
   endif
 
-  let gist = json#decode(result.content).gists[0]
+  let gist = webapi#json#decode(result.content).gists[0]
   echo 'https://gist.github.com/' . gist.repo
 
   return ['done', '']
@@ -301,7 +301,7 @@ function! s:write_update(_, content)  "{{{2
   let file_ext = fnamemodify(a:_.gist_filename, ':e')
 
   " BUGS: Not obvious whether the request was successful.
-  call http#post('https://gist.github.com/gists/' . a:_.gist_id, {
+  call webapi#http#post('https://gist.github.com/gists/' . a:_.gist_id, {
   \    '_method': 'put',
   \    printf('file_ext[%s]', a:_.gist_filename): file_ext,
   \    printf('file_name[%s]', a:_.gist_filename): a:_.gist_filename,
