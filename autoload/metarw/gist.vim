@@ -67,7 +67,7 @@ function! metarw#gist#complete(arglead, cmdline, cursorpos)  "{{{2
         \               _.gist_user,
         \               gist.id)
         \ )
-	  endif
+      endif
       let ids[gist.id] = 1
     endfor
     let head_part = printf('%s:%s/', _.scheme, _.gist_user)
