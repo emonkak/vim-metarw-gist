@@ -1,6 +1,6 @@
 " metarw scheme: gist
-" Version: 0.0.0
-" Copyright (C) 2011 emonkak <emonkak@gmail.com>
+" Version: 0.0.1
+" Copyright (C) 2012 emonkak <emonkak@gmail.com>
 " License: MIT license  {{{
 "     Permission is hereby granted, free of charge, to any person obtaining
 "     a copy of this software and associated documentation files (the
@@ -41,31 +41,62 @@ endif
 
 
 " Interface  "{{{1
+function! metarw#gist#authorize()  "{{{2
+  let user = input('User: ', g:metarw_gist_user)
+  let password = inputsecret('Password: ')
+
+  let api = 'https://api.github.com/authorizations'
+  let result = webapi#http#post(api, webapi#json#encode({
+  \   'scopes':  ['gist'],
+  \   'note': 'vim-metarw-gist'
+  \ }), {
+  \   'Content-Type': 'application/json',
+  \   'Authorization' : 'basic ' . webapi#base64#b64encode(user . ':' . password)
+  \ })
+  if result.header[0] !=# 'HTTP/1.1 201 Created'
+    echoerr result.header[0] . ': ' . api
+  endif
+
+  let authorization = webapi#json#decode(result.content)
+  if has_key(authorization, 'token')
+    call system('git config --global github.user ' . shellescape(user))
+    call system('git config --global github.token ' . shellescape(authorization.token))
+    let g:metarw_gist_user = user
+    let g:metarw_gist_token = authorization.token
+  endif
+
+  redraw
+  echomsg string(authorization)
+endfunction
+
+
+
+
 function! metarw#gist#complete(arglead, cmdline, cursorpos)  "{{{2
   let _ = s:parse_incomplete_fakepath(a:arglead)
 
   let candidates = []
   if _.gist_filename_given_p
   \  || (_.gist_id_given_p && _.given_fakepath[-1] ==# '/')
-    for filename in s:gist_metadata(_).gists[0].files
+    for file in values(s:gist_metadata(_).files)
       call add(candidates,
       \        printf('%s:%s/%s/%s',
       \               _.scheme,
       \               _.gist_user,
       \               _.gist_id,
-      \               filename))
+      \               file.filename))
     endfor
     let head_part = printf('%s:%s/%s/', _.scheme, _.gist_user, _.gist_id)
     let tail_part = _.gist_filename
   else
-    for gist in s:gist_list(_).gists
-      for filename in gist.files
+    for gist in s:gist_list(_)
+      for file in values(gist.files)
         call add(candidates,
         \        printf('%s:%s/%s/%s',
         \               _.scheme,
         \               _.gist_user,
-        \               gist.repo,
-        \               filename))
+        \               gist.id,
+        \               file.filename))
       endfor
     endfor
     let head_part = printf('%s:%s/', _.scheme, _.gist_user)
@@ -167,39 +198,30 @@ endfunction
 
 
 function! s:gist_metadata(_)  "{{{2
-  let api = 'https://gist.github.com/api/v1/json/' . a:_.gist_id
-  let result = webapi#http#get(api)
+  let api = 'https://api.github.com/gists/' . a:_.gist_id
+  let result = webapi#http#get(api, {}, {
+  \   'Authorization': 'token ' . g:metarw_gist_token,
+  \ })
   if result.header[0] !=# 'HTTP/1.1 200 OK'
-    throw 'Request failed: ' . result.header[0]
+    throw result.header[0] . ': ' . api
   endif
 
-  let json = webapi#json#decode(result.content)
-  if has_key(json, 'error')
-    throw json.error
-  endif
-
-  return json
+  return webapi#json#decode(result.content)
 endfunction
 
 
 
 
 function! s:gist_list(_)  "{{{2
-  let api = 'https://gist.github.com/api/v1/json/gists/' . a:_.gist_user
-  let result = webapi#http#get(api)
+  let api = 'https://api.github.com/users/' . a:_.gist_user . '/gists'
+  let result = webapi#http#get(api, {}, {
+  \   'Authorization': 'token ' . g:metarw_gist_token,
+  \ })
   if result.header[0] !=# 'HTTP/1.1 200 OK'
-    throw 'Request failed: ' . result.header[0]
+    throw result.header[0] . ': ' . api
   endif
 
-  if result.content ==# 'error'
-    throw 'User not found'
-  endif
-  let json = webapi#json#decode(result.content)
-  if has_key(json, 'error')
-    throw json.error
-  endif
-
-  return json
+  return webapi#json#decode(result.content)
 endfunction
 
 
@@ -211,7 +233,7 @@ function! s:read_content(_)  "{{{2
   \                a:_.gist_filename)
   let result = webapi#http#get(api)
   if result.header[0] !=# 'HTTP/1.1 200 OK'
-    return ['error', 'Request failed: ' result.header[0]]
+    return ['error', result.header[0] . ': ' . api]
   endif
   put =result.content
 
@@ -233,14 +255,14 @@ function! s:read_metadata(_)  "{{{2
   catch
     return ['error', v:exception]
   endtry
-  for filename in gist_metadata.gists[0].files
+  for file in values(gist_metadata.files)
     call add(result, {
-    \    "label": filename,
+    \    "label": file.filename,
     \    "fakepath": printf("%s:%s/%s/%s",
     \                       a:_.scheme,
     \                       a:_.gist_user,
     \                       a:_.gist_id,
-    \                       filename)
+    \                       file.filename)
     \ })
   endfor
 
@@ -257,15 +279,15 @@ function! s:read_list(_)  "{{{2
   catch
     return ['error', v:exception]
   endtry
-  for gist in gist_list.gists
-    for filename in gist.files
+  for gist in gist_list
+    for file in values(gist.files)
       call add(result, {
-      \    'label': gist.repo . ': ' . filename,
+      \    'label': gist.id . '/' . file.filename,
       \    'fakepath': printf('%s:%s/%s/%s',
       \                       a:_.scheme,
       \                       a:_.gist_user,
-      \                       gist.repo,
-      \                       filename)
+      \                       gist.id,
+      \                       file.filename)
       \ })
     endfor
   endfor
@@ -277,40 +299,60 @@ endfunction
 
 
 function! s:write_new(_, content)  "{{{2
-  let api = 'https://gist.github.com/api/v1/json/new'
-  let result = webapi#http#post(api, {
-  \    printf('files[%s]', webapi#http#encodeURIComponent(expand('%:t'))): a:content,
-  \    'login': g:metarw_gist_user,
-  \    'token': g:metarw_gist_token,
-  \    'description': expand('%:t')
-  \ }, {'Expect': ''})
-  if result.header[0] !=# 'HTTP/1.1 200 OK'
-    return ['error', 'Request failed: ' . result.header[0]]
+  let api = 'https://api.github.com/gists'
+  let result = webapi#http#post(api, webapi#json#encode({
+  \   'description': expand('%:t'),
+  \   'public': 1,
+  \   'files': {
+  \     expand('%:t'): {
+  \       'content': a:content
+  \     }
+  \   }
+  \ }), {
+  \   'Authorization': 'token ' . g:metarw_gist_token,
+  \   'Content-Type': 'application/json',
+  \   'Expect': ''
+  \ })
+  if result.header[0] !=# 'HTTP/1.1 201 Created'
+    return ['error', result.header[0] . ': ' . api]
   endif
 
-  let gist = webapi#json#decode(result.content).gists[0]
-  echo 'https://gist.github.com/' . gist.repo
-
-  return ['done', '']
+  let gist = webapi#json#decode(result.content)
+  if has_key(gist, 'url')
+    echo gist.url
+    return ['done', '']
+  else
+    return ['error', 'Failed to create the gist']
+  endif
 endfunction
 
 
 
 
 function! s:write_update(_, content)  "{{{2
-  let file_ext = fnamemodify(a:_.gist_filename, ':e')
+  let api = 'https://api.github.com/gists/' . a:_.gist_id
+  let result = webapi#http#post(api, webapi#json#encode({
+  \   'files': {
+  \     a:_.gist_filename: {
+  \       'content': a:content
+  \     }
+  \   }
+  \ }), {
+  \   'Authorization': 'token ' . g:metarw_gist_token,
+  \   'Content-Type': 'application/json',
+  \   'Expect': ''
+  \ })
+  if result.header[0] !=# 'HTTP/1.1 200 OK'
+    return ['error', result.header[0] . ': ' . api]
+  endif
 
-  " BUGS: Not obvious whether the request was successful.
-  call webapi#http#post('https://gist.github.com/gists/' . a:_.gist_id, {
-  \    '_method': 'put',
-  \    printf('file_ext[%s]', a:_.gist_filename): file_ext,
-  \    printf('file_name[%s]', a:_.gist_filename): a:_.gist_filename,
-  \    printf('file_contents[%s]', a:_.gist_filename): a:content,
-  \    'login': g:metarw_gist_user,
-  \    'token': g:metarw_gist_token,
-  \ }, {'Expect': ''})
-
-  return ['done', '']
+  let gist = webapi#json#decode(result.content)
+  if has_key(gist, 'url')
+    echo gist.url
+    return ['done', '']
+  else
+    return ['error', 'Failed to update the gist']
+  endif
 endfunction
 
 

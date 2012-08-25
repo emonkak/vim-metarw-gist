@@ -5,6 +5,19 @@
 
 # Usage
 
+Please run the following command first.
+
+`:call metarw#gist#authorize()`
+
+Or set `g:metarw_gist_user` and `g:metarw_gist_token`.
+
+About the token: http://developer.github.com/v3/oauth/
+
+Example:
+
+	let g:metarw_gist_user = 'emonkak'
+	let g:metarw_gist_token = '0000000000000000000000000000000000000000'
+
 ## List own gists
 
 `:edit gist:`
