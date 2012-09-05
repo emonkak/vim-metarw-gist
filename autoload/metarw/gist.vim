@@ -42,8 +42,14 @@ endif
 
 " Interface  "{{{1
 function! metarw#gist#authorize()  "{{{2
-  let user = input('User: ', g:metarw_gist_user)
+  let user = input('Username: ', g:metarw_gist_user)
   let password = inputsecret('Password: ')
+
+  redraw
+  if user == '' || password == ''
+    echoerr 'Invalid username or password.'
+    return
+  endif
 
   let api = 'https://api.github.com/authorizations'
   let result = webapi#http#post(api, webapi#json#encode({
@@ -55,6 +61,7 @@ function! metarw#gist#authorize()  "{{{2
   \ })
   if result.header[0] !=# 'HTTP/1.1 201 Created'
     echoerr result.header[0] . ': ' . api
+    return
   endif
 
   let authorization = webapi#json#decode(result.content)
@@ -65,8 +72,11 @@ function! metarw#gist#authorize()  "{{{2
     let g:metarw_gist_token = authorization.token
   endif
 
-  redraw
-  echomsg string(authorization)
+  if has_key(authorization, 'message')
+    echomsg authorization.message
+  else
+    echomsg string(authorization)
+  endif
 endfunction
 
 
