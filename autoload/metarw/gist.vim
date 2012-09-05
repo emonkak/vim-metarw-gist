@@ -256,7 +256,7 @@ endfunction
 function! s:read_metadata(_)  "{{{2
   let result = [{
   \     'label': '../',
-  \     'fakepath': printf("%s:%s",
+  \     'fakepath': printf('%s:%s',
   \                        a:_.scheme,
   \                        a:_.gist_user)
   \  }]
@@ -267,8 +267,8 @@ function! s:read_metadata(_)  "{{{2
   endtry
   for file in values(gist_metadata.files)
     call add(result, {
-    \    "label": file.filename,
-    \    "fakepath": printf("%s:%s/%s/%s",
+    \    'label': file.filename,
+    \    'fakepath': printf('%s:%s/%s/%s',
     \                       a:_.scheme,
     \                       a:_.gist_user,
     \                       a:_.gist_id,
