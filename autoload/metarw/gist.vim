@@ -123,6 +123,9 @@ function! metarw#gist#read(fakepath)  "{{{2
   let _ = s:parse_incomplete_fakepath(a:fakepath)
 
   if _.gist_filename_given_p
+    if _.gist_user !=# g:metarw_gist_user
+      setlocal readonly
+    endif
     let result = s:read_content(_)
   elseif _.gist_id_given_p
     let result = s:read_metadata(_)
@@ -142,7 +145,7 @@ function! metarw#gist#write(fakepath, line1, line2, append_p)  "{{{2
   let content = join(getline(a:line1, a:line2), "\n")
   if !_.gist_user_given_p
     let result = s:write_new(_, content)
-  elseif g:metarw_gist_user !=# _.gist_user
+  elseif _.gist_user !=# g:metarw_gist_user
     let result = ['error', 'Writing to other user gist not supported']
   elseif !_.gist_filename_given_p
     let result = ['error', 'Filename is not given']
