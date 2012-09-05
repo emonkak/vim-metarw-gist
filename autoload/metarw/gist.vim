@@ -328,8 +328,8 @@ function! s:write_new(_, content)  "{{{2
   endif
 
   let gist = webapi#json#decode(result.content)
-  if has_key(gist, 'url')
-    echo gist.url
+  if has_key(gist, 'html_url')
+    echomsg gist.html_url
     return ['done', '']
   else
     return ['error', 'Failed to create the gist']
@@ -357,8 +357,8 @@ function! s:write_update(_, content)  "{{{2
   endif
 
   let gist = webapi#json#decode(result.content)
-  if has_key(gist, 'url')
-    echo gist.url
+  if has_key(gist, 'html_url')
+    echomsg gist.html_url
     return ['done', '']
   else
     return ['error', 'Failed to update the gist']
