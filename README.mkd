@@ -47,3 +47,10 @@ Default: `system('git config --global github.user')` or `$GITHUB_USER`
 ## g:metarw_gist_token
 
 Default: `system('git config --global github.token')` or `$GITHUB_TOKEN`
+
+## g:metarw_gist_safe_write
+
+Throw error when execute command such as `:w`.
+If you want to save, execute with a `!` modifier.
+
+Default: 0

@@ -37,6 +37,8 @@ if !exists('g:metarw_gist_token')
   end
 endif
 
+let g:metarw_gist_safe_write = get(g:, 'metarw_gist_safe_write', 0)
+
 
 
 
@@ -142,15 +144,19 @@ endfunction
 function! metarw#gist#write(fakepath, line1, line2, append_p)  "{{{2
   let _ = s:parse_incomplete_fakepath(a:fakepath)
 
-  let content = join(getline(a:line1, a:line2), "\n")
-  if !_.gist_user_given_p
-    let result = s:write_new(_, content)
-  elseif _.gist_user !=# g:metarw_gist_user
-    let result = ['error', 'Writing to other user gist not supported']
-  elseif !_.gist_filename_given_p
-    let result = ['error', 'Filename is not given']
+  if !g:metarw_gist_safe_write || v:cmdbang
+    let content = join(getline(a:line1, a:line2), "\n")
+    if !_.gist_user_given_p
+      let result = s:write_new(_, content)
+    elseif _.gist_user !=# g:metarw_gist_user
+      let result = ['error', 'Writing to other user gist not supported']
+    elseif !_.gist_filename_given_p
+      let result = ['error', 'Filename is not given']
+    else
+      let result = s:write_update(_, content)
+    endif
   else
-    let result = s:write_update(_, content)
+    let result = ['error', 'Cannot make changes']
   endif
 
   return result
