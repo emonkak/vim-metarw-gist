@@ -247,7 +247,8 @@ endfunction
 
 
 function! s:read_content(_)  "{{{2
-  let api = printf('https://raw.github.com/gist/%s/%s',
+  let api = printf('https://gist.github.com/%s/%s/raw/%s',
+  \                a:_.gist_user,
   \                a:_.gist_id,
   \                a:_.gist_filename)
   let result = webapi#http#get(api)
