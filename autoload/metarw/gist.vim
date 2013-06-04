@@ -61,9 +61,8 @@ function! metarw#gist#authorize()  "{{{2
   \   'Content-Type': 'application/json',
   \   'Authorization' : 'basic ' . webapi#base64#b64encode(user . ':' . password)
   \ })
-  if result.header[0] !=# 'HTTP/1.1 201 Created'
-    echoerr result.header[0] . ': ' . api
-    return
+  if result.status != 200
+    throw printf('%d %s: %s', result.status, result.message, api)
   endif
 
   let authorization = webapi#json#decode(result.content)
@@ -221,8 +220,8 @@ function! s:gist_metadata(_)  "{{{2
   let result = webapi#http#get(api, {}, {
   \   'Authorization': 'token ' . g:metarw_gist_token,
   \ })
-  if result.header[0] !=# 'HTTP/1.1 200 OK'
-    throw result.header[0] . ': ' . api
+  if result.status != 200
+    throw printf('%d %s: %s', result.status, result.message, api)
   endif
 
   return webapi#json#decode(result.content)
@@ -236,8 +235,8 @@ function! s:gist_list(_)  "{{{2
   let result = webapi#http#get(api, {}, {
   \   'Authorization': 'token ' . g:metarw_gist_token,
   \ })
-  if result.header[0] !=# 'HTTP/1.1 200 OK'
-    throw result.header[0] . ': ' . api
+  if result.status != 200
+    throw printf('%d %s: %s', result.status, result.message, api)
   endif
 
   return webapi#json#decode(result.content)
@@ -252,8 +251,8 @@ function! s:read_content(_)  "{{{2
   \                a:_.gist_id,
   \                a:_.gist_filename)
   let result = webapi#http#get(api)
-  if result.header[0] !=# 'HTTP/1.1 200 OK'
-    return ['error', result.header[0] . ': ' . api]
+  if result.status != 200
+    return ['error', printf('%d %s: %s', result.status, result.message, api)]
   endif
   put =result.content
 
@@ -333,8 +332,8 @@ function! s:write_new(_, content)  "{{{2
   \   'Content-Type': 'application/json',
   \   'Expect': ''
   \ })
-  if result.header[0] !=# 'HTTP/1.1 201 Created'
-    return ['error', result.header[0] . ': ' . api]
+  if result.status != 201
+    return ['error', printf('%d %s: %s', result.status, result.message, api)]
   endif
 
   let gist = webapi#json#decode(result.content)
@@ -362,8 +361,8 @@ function! s:write_update(_, content)  "{{{2
   \   'Content-Type': 'application/json',
   \   'Expect': ''
   \ })
-  if result.header[0] !=# 'HTTP/1.1 200 OK'
-    return ['error', result.header[0] . ': ' . api]
+  if result.status != 200
+    return ['error', printf('%d %s: %s', result.status, result.message, api)]
   endif
 
   let gist = webapi#json#decode(result.content)
