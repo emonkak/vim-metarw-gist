@@ -39,6 +39,8 @@ endif
 
 let g:metarw_gist_safe_write = get(g:, 'metarw_gist_safe_write', 0)
 
+let g:metarw_gist_public = get(g:, 'metarw_gist_public', 1)
+
 
 
 
@@ -321,7 +323,7 @@ function! s:write_new(_, content)  "{{{2
   let api = 'https://api.github.com/gists'
   let result = webapi#http#post(api, webapi#json#encode({
   \   'description': expand('%:t'),
-  \   'public': 'true',
+  \   'public': g:metarw_gist_public ? function('webapi#json#true') : function('webapi#json#false'),
   \   'files': {
   \     expand('%:t'): {
   \       'content': a:content
