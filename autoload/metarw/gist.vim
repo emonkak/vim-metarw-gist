@@ -321,7 +321,7 @@ function! s:write_new(_, content)  "{{{2
   let api = 'https://api.github.com/gists'
   let result = webapi#http#post(api, webapi#json#encode({
   \   'description': expand('%:t'),
-  \   'public': 1,
+  \   'public': 'true',
   \   'files': {
   \     expand('%:t'): {
   \       'content': a:content
