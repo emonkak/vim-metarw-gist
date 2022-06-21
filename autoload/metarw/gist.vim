@@ -254,7 +254,7 @@ function! s:read_content(_)  "{{{2
   \                a:_.gist_filename)
   let result = webapi#http#get(api)
   if result.status != 200
-    return ['error', printf('%d %s: %s', result.status, result.message, api)]
+    return ['error', printf('%d %s: %s', result.status, result.message, result.content)]
   endif
   put =result.content
 
@@ -335,7 +335,7 @@ function! s:write_new(_, content)  "{{{2
   \   'Expect': ''
   \ })
   if result.status != 201
-    return ['error', printf('%d %s: %s', result.status, result.message, api)]
+    return ['error', printf('%d %s: %s', result.status, result.message, result.content)]
   endif
 
   let gist = webapi#json#decode(result.content)
@@ -364,7 +364,7 @@ function! s:write_update(_, content)  "{{{2
   \   'Expect': ''
   \ })
   if result.status != 200
-    return ['error', printf('%d %s: %s', result.status, result.message, api)]
+    return ['error', printf('%d %s: %s', result.status, result.message, result.content)]
   endif
 
   let gist = webapi#json#decode(result.content)
