@@ -24,17 +24,11 @@
 " Variables  "{{{1
 
 if !exists('g:metarw_gist_user')
-  let g:metarw_gist_user = system('git config --global github.user')[:-2]
-  if g:metarw_gist_user == ''
-    let g:metarw_gist_user = $GITHUB_USER
-  end
+  let g:metarw_gist_user = system('git config --get github.user')[:-2]
 endif
 
 if !exists('g:metarw_gist_token')
-  let g:metarw_gist_token = system('git config --global github.token')[:-2]
-  if g:metarw_gist_token == ''
-    let g:metarw_gist_token = $GITHUB_TOKEN
-  end
+  let g:metarw_gist_token = system('git config --get github.token')[:-2]
 endif
 
 let g:metarw_gist_safe_write = get(g:, 'metarw_gist_safe_write', 0)
