@@ -45,46 +45,6 @@ let g:metarw_gist_public = get(g:, 'metarw_gist_public', 1)
 
 
 " Interface  "{{{1
-function! metarw#gist#authorize()  "{{{2
-  let user = input('Username: ', g:metarw_gist_user)
-  let password = inputsecret('Password: ')
-
-  redraw
-  if user == '' || password == ''
-    echoerr 'Invalid username or password.'
-    return
-  endif
-
-  let api = 'https://api.github.com/authorizations'
-  let result = webapi#http#post(api, webapi#json#encode({
-  \   'scopes':  ['gist'],
-  \   'note': 'vim-metarw-gist'
-  \ }), {
-  \   'Content-Type': 'application/json',
-  \   'Authorization' : 'basic ' . webapi#base64#b64encode(user . ':' . password)
-  \ })
-  if result.status != 200
-    throw printf('%d %s: %s', result.status, result.message, api)
-  endif
-
-  let authorization = webapi#json#decode(result.content)
-  if has_key(authorization, 'token')
-    call system('git config --global github.user ' . shellescape(user))
-    call system('git config --global github.token ' . shellescape(authorization.token))
-    let g:metarw_gist_user = user
-    let g:metarw_gist_token = authorization.token
-  endif
-
-  if has_key(authorization, 'message')
-    echomsg authorization.message
-  else
-    echomsg string(authorization)
-  endif
-endfunction
-
-
-
-
 function! metarw#gist#complete(arglead, cmdline, cursorpos)  "{{{2
   let _ = s:parse_incomplete_fakepath(a:arglead)
 
