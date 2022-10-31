@@ -39,7 +39,7 @@ let g:metarw_gist_public = get(g:, 'metarw_gist_public', 1)
 
 
 " Interface  "{{{1
-function! metarw#gist#complete(arglead, cmdline, cursorpos)  "{{{2
+function! metarw#gist#complete(arglead, cmdline, cursorpos) abort  "{{{2
   let _ = s:parse_incomplete_fakepath(a:arglead)
 
   let candidates = []
@@ -76,7 +76,7 @@ endfunction
 
 
 
-function! metarw#gist#read(fakepath)  "{{{2
+function! metarw#gist#read(fakepath) abort  "{{{2
   let _ = s:parse_incomplete_fakepath(a:fakepath)
 
   if _.gist_filename_given_p
@@ -96,49 +96,46 @@ endfunction
 
 
 
-function! metarw#gist#write(fakepath, line1, line2, append_p)  "{{{2
+function! metarw#gist#write(fakepath, line1, line2, append_p) abort  "{{{2
   let _ = s:parse_incomplete_fakepath(a:fakepath)
 
   if !g:metarw_gist_safe_write || v:cmdbang
     let content = join(getline(a:line1, a:line2), "\n")
     if !_.gist_user_given_p
-      let result = s:write_new(_, content)
+      return s:write_new(_, content)
     elseif _.gist_user !=# g:metarw_gist_user
-      let result = ['error', 'Writing to other user gist not supported']
+      return ['error', 'Cannot write to other user''s gist']
     elseif !_.gist_filename_given_p
-      let result = ['error', 'Filename is not given']
+      return ['error', 'Filename is not given']
     else
-      let result = s:write_update(_, content)
+      return s:write_update(_, content)
     endif
-  else
-    let result = ['error', 'Cannot make changes']
   endif
-
-  return result
+  return ['error', 'Trying to save changes to the gist. If you want to it, please retry with :write!']
 endfunction
 
 
 
 
 " Misc.  "{{{1
-function! s:parse_incomplete_fakepath(incomplete_fakepath)  "{{{2
+function! s:parse_incomplete_fakepath(incomplete_fakepath) abort  "{{{2
   let _ = {}
 
-  let fragments = split(a:incomplete_fakepath, '^\l\+\zs:', !0)
-  if len(fragments) <= 1
+  let components = split(a:incomplete_fakepath, '^\l\+\zs:', !0)
+  if len(components) <= 1
     echoerr 'Unexpected a:incomplete_fakepath:' string(a:incomplete_fakepath)
     throw 'metarw:gist#e1'
   endif
-  let fragments = [fragments[0]] + split(fragments[1], '[\/]')
+  let components = [components[0]] + split(components[1], '[\/]')
 
   let _.given_fakepath = a:incomplete_fakepath
-  let _.scheme = fragments[0]
+  let _.scheme = components[0]
 
   " {gist_user}
   let i = 1
-  if i < len(fragments)
+  if i < len(components)
     let _.gist_user_given_p = !0
-    let _.gist_user = fragments[i]
+    let _.gist_user = components[i]
     let i += 1
   else
     let _.gist_user_given_p = !!0
@@ -146,9 +143,9 @@ function! s:parse_incomplete_fakepath(incomplete_fakepath)  "{{{2
   endif
 
   " {gist_id}
-  if i < len(fragments)
+  if i < len(components)
     let _.gist_id_given_p = !0
-    let _.gist_id = fragments[i]
+    let _.gist_id = components[i]
     let i += 1
   else
     let _.gist_id_given_p = !!0
@@ -156,9 +153,9 @@ function! s:parse_incomplete_fakepath(incomplete_fakepath)  "{{{2
   endif
 
   " {gist_filename}
-  if i < len(fragments)
+  if i < len(components)
     let _.gist_filename_given_p = !0
-    let _.gist_filename = fragments[i]
+    let _.gist_filename = components[i]
     let i += 1
   else
     let _.gist_filename_given_p = !!0
@@ -171,7 +168,7 @@ endfunction
 
 
 
-function! s:gist_metadata(_)  "{{{2
+function! s:gist_metadata(_) abort  "{{{2
   let api = 'https://api.github.com/gists/' . a:_.gist_id
   let result = webapi#http#get(api, {}, {
   \   'Authorization': 'token ' . g:metarw_gist_token,
@@ -186,7 +183,7 @@ endfunction
 
 
 
-function! s:gist_list(_)  "{{{2
+function! s:gist_list(_) abort  "{{{2
   let api = 'https://api.github.com/users/' . a:_.gist_user . '/gists'
   let result = webapi#http#get(api, {}, {
   \   'Authorization': 'token ' . g:metarw_gist_token,
@@ -201,7 +198,7 @@ endfunction
 
 
 
-function! s:read_content(_)  "{{{2
+function! s:read_content(_) abort  "{{{2
   let api = printf('https://gist.github.com/%s/%s/raw/%s',
   \                a:_.gist_user,
   \                a:_.gist_id,
@@ -218,7 +215,7 @@ endfunction
 
 
 
-function! s:read_metadata(_)  "{{{2
+function! s:read_metadata(_) abort  "{{{2
   let result = [{
   \     'label': '../',
   \     'fakepath': printf('%s:%s',
@@ -247,7 +244,7 @@ endfunction
 
 
 
-function! s:read_list(_)  "{{{2
+function! s:read_list(_) abort  "{{{2
   let result = []
   try
     let gist_list = s:gist_list(a:_)
@@ -273,7 +270,7 @@ endfunction
 
 
 
-function! s:write_new(_, content)  "{{{2
+function! s:write_new(_, content) abort  "{{{2
   let api = 'https://api.github.com/gists'
   let result = webapi#http#post(api, webapi#json#encode({
   \   'description': expand('%:t'),
@@ -304,7 +301,7 @@ endfunction
 
 
 
-function! s:write_update(_, content)  "{{{2
+function! s:write_update(_, content) abort  "{{{2
   let api = 'https://api.github.com/gists/' . a:_.gist_id
   let result = webapi#http#post(api, webapi#json#encode({
   \   'files': {
