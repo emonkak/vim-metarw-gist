@@ -31,7 +31,7 @@ if !exists('g:metarw_gist_token')
   let g:metarw_gist_token = system('git config --get github.token')[:-2]
 endif
 
-let g:metarw_gist_safe_write = get(g:, 'metarw_gist_safe_write', 0)
+let g:metarw_gist_safe_write = get(g:, 'metarw_gist_safe_write', 1)
 
 let g:metarw_gist_public = get(g:, 'metarw_gist_public', 1)
 
